@@ -1,13 +1,12 @@
 package com.useapi.foodallergydetector.data.network
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
+import com.useapi.foodallergydetector.data.store.TokenPreferences
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class JwtInterceptor(
-    private val tokenProvider: DataStore<Preferences>
+    private val tokenProvider: TokenPreferences
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()

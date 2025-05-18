@@ -2,37 +2,32 @@
 package com.useapi.foodallergydetector.data.network
 
 import android.content.Context
-import androidx.datastore.preferences.preferencesDataStore
+import com.useapi.foodallergydetector.data.store.TokenPreferences
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
-// if you haven’t already, add this top‐level extension:
-private val Context.dataStore by preferencesDataStore("user_prefs")
-
 object RetrofitClient {
+    private lateinit var _authApi: AuthApi
+    private lateinit var _scanApi: ScanApi
+    val authApi: AuthApi get() = _authApi
+    val scanApi: ScanApi get() = _scanApi
 
-    // will be initialized in App.onCreate()
-    private lateinit var retrofit: Retrofit
-
-    /**  Must call before any `.authApi` or `.scanApi` usage  */
-    fun init(context: Context, baseUrl: String = "http://192.168.11.128:8082/") {
+    fun init(appContext: Context, tokenPrefs: TokenPreferences) {
         val client = OkHttpClient.Builder()
-            .addInterceptor(JwtInterceptor(context.dataStore))
+            .addInterceptor(JwtInterceptor(tokenPrefs))
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .build()
 
-        retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(client)
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://192.168.11.128:8082/")   // see step 4
             .addConverterFactory(GsonConverterFactory.create())
+            .client(client)
             .build()
+
+        _authApi = retrofit.create(AuthApi::class.java)
+        _scanApi = retrofit.create(ScanApi::class.java)
     }
-
-    /** only built when you actually call it (and after init) */
-    val authApi: AuthApi
-        get() = retrofit.create(AuthApi::class.java)
-
-    /** only built when you actually call it (and after init) */
-    val scanApi: ScanApi
-        get() = retrofit.create(ScanApi::class.java)
 }

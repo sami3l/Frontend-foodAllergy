@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.remember
+
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,7 +19,7 @@ import com.useapi.foodallergydetector.ui.evaluate.EvaluateScreen
 import com.useapi.foodallergydetector.ui.history.HistoryScreen
 import com.useapi.foodallergydetector.ui.theme.FoodAllergyDetectorTheme
 
-// extension property for DataStore
+// extension property so you can do `this.dataStore` in any ComponentActivity
 private val ComponentActivity.dataStore by preferencesDataStore("user_prefs")
 
 class MainActivity : ComponentActivity() {
@@ -27,14 +27,22 @@ class MainActivity : ComponentActivity() {
     // DataStore-backed token helper
     private val tokenPrefs by lazy { TokenPreferences(this) }
 
-    // <-- we DO NOT touch this delegate; it only creates the ViewModel when first needed
+    // Creates AuthViewModel with the retrofit API + tokenPrefs
     private val authViewModel: AuthViewModel by viewModels {
-        AuthViewModelFactory(RetrofitClient.authApi, tokenPrefs)
-    }
+       AuthViewModelFactory(
+            api        = RetrofitClient.authApi,
+             tokenPrefs = tokenPrefs
+           )
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // ① Initialize RetrofitClient **before** anything else tries to use it
-        RetrofitClient.init(applicationContext)
+        // init RetrofitClient *before* anyone tries to use it
+        val authViewModel: AuthViewModel by viewModels {
+          AuthViewModelFactory(
+                api        = RetrofitClient.authApi,
+                tokenPrefs = tokenPrefs
+               )
+        }
 
         super.onCreate(savedInstanceState)
 
@@ -43,24 +51,33 @@ class MainActivity : ComponentActivity() {
                 Surface {
                     val nav = rememberNavController()
 
-                    NavHost(navController = nav, startDestination = Screen.Login.route) {
+                    NavHost(
+                        navController = nav,
+                        startDestination = Screen.Login.route
+                    ) {
+                        // LOGIN
                         composable(Screen.Login.route) {
                             LoginScreen(
                                 viewModel      = authViewModel,
                                 onLoginSuccess = { jwtToken ->
-                                    // you now have the raw JWT in `jwtToken`
-                                    // you can stash it in memory, or navigate & pass it on
+                                    // Here you have your JWT:
+                                    // you could stash it in memory, pass to the next screen, etc.
                                     nav.navigate(Screen.Evaluate.route) {
                                         popUpTo(Screen.Login.route) { inclusive = true }
                                     }
                                 }
                             )
                         }
+
+                        // EVALUATE
                         composable(Screen.Evaluate.route) {
                             EvaluateScreen(
+                                tokenPrefs    = tokenPrefs,
                                 onShowHistory = { nav.navigate(Screen.History.route) }
                             )
                         }
+
+                        // HISTORY
                         composable(Screen.History.route) {
                             HistoryScreen()
                         }
@@ -71,7 +88,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// bottom of file: your Nav‐routes sealed class
+// ----------------------------------------------------------------------------------
+// Nav‐routes sealed class (at bottom of this file)
+//
+// Notice: no trailing commas, all braces balanced
+// ----------------------------------------------------------------------------------
 sealed class Screen(val route: String) {
     object Login    : Screen("login")
     object Evaluate : Screen("evaluate")

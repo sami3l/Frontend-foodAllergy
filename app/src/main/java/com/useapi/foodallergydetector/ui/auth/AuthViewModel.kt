@@ -1,4 +1,3 @@
-// file: app/src/main/java/com/useapi/foodallergydetector/ui/auth/AuthViewModel.kt
 package com.useapi.foodallergydetector.ui.auth
 
 import androidx.lifecycle.ViewModel
@@ -41,7 +40,9 @@ class AuthViewModel(
                 if (token.isNullOrEmpty()) {
                     _state.value = AuthState.Error("Login succeeded but no token returned")
                 } else {
+                    // persist it to DataStore
                     tokenPrefs.saveToken(token)
+                    // emit success along with the raw JWT
                     _state.value = AuthState.Success(token)
                 }
             } catch (t: Throwable) {
