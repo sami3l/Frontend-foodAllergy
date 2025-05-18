@@ -31,7 +31,8 @@ class ScanViewModel(
                 val req = ScanRequest(
                     productText = "",
                     barcode = barcode,
-                    productName = ""
+                    productName = "",
+                    userId = ""
                 )
                 val resp: ScanResponse = api.evaluate(req)
                 _state.value = ScanState.Success(resp)

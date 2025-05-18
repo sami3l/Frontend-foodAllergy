@@ -18,11 +18,14 @@ fun EvaluateScreen(
     tokenPrefs: TokenPreferences,
     onShowHistory: () -> Unit
 ) {
-    // instantiate the ScanViewModel via our factory
+    // ViewModel avec factory personnalisée
     val factory = ScanViewModelFactory(RetrofitClient.scanApi)
     val vm: ScanViewModel = viewModel(factory = factory)
 
     var barcode by remember { mutableStateOf("") }
+    var productText by remember { mutableStateOf("") }
+    var productName by remember { mutableStateOf("") }
+
     val state by vm.state.collectAsState()
 
     Column(
@@ -42,11 +45,33 @@ fun EvaluateScreen(
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = productText,
+            onValueChange = { productText = it },
+            label = { Text("Product Text") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = productName,
+            onValueChange = { productName = it },
+            label = { Text("Product Name") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(Modifier.height(12.dp))
 
         Button(
-            onClick = { vm.evaluate(barcode.trim()) },
+            onClick = {
+                vm.evaluate(
+                    barcode = barcode.trim(),
+                    productText = productText.trim(),
+                    productName = productName.trim()
+                )
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = state != ScanState.Loading
         ) {
