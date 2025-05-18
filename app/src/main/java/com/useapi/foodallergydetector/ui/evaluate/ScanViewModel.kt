@@ -24,15 +24,14 @@ class ScanViewModel(
     private val _state = MutableStateFlow<ScanState>(ScanState.Idle)
     val state: StateFlow<ScanState> = _state
 
-    fun evaluate(barcode: String) {
+    fun evaluate( productText: String,barcode: String, productName: String) {
         viewModelScope.launch {
             _state.value = ScanState.Loading
             try {
-                // build request; if you want productText instead, swap fields
                 val req = ScanRequest(
-                    barcode = barcode, productName = null,
-                    userId = TODO(),
-                    productText = TODO()
+                    productText = "",
+                    barcode = barcode,
+                    productName = ""
                 )
                 val resp: ScanResponse = api.evaluate(req)
                 _state.value = ScanState.Success(resp)
@@ -41,6 +40,7 @@ class ScanViewModel(
             }
         }
     }
+
 }
 
 class ScanViewModelFactory(private val api: ScanApi) : ViewModelProvider.Factory {
